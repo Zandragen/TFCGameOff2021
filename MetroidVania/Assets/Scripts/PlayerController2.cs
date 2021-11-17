@@ -70,7 +70,7 @@ public class PlayerController2 : MonoBehaviour
   {
     // Horizontal Input
     float moveX = Input.GetAxisRaw("Horizontal");
-    bool run = Input.GetKeyDown(KeyCode.LeftShift);
+    bool run = Input.GetKey(KeyCode.LeftShift);
     bool dash = Input.GetKeyDown(KeyCode.LeftShift);
     Traverse(moveX, run, dash);
 
@@ -129,6 +129,7 @@ public class PlayerController2 : MonoBehaviour
 
   void Jump()
   {
+    anim.SetTrigger("jump");
     if(isGrounded())
       body.velocity = new Vector2(body.velocity.x, jumpForce);
     else if(onWall())
@@ -140,8 +141,6 @@ public class PlayerController2 : MonoBehaviour
       body.velocity = new Vector2(body.velocity.x, jumpForce);
       doubleJumped = true;
     }
-
-    anim.SetTrigger("jump");
   }
 
   bool isGrounded()
