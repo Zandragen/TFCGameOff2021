@@ -11,6 +11,11 @@ public class PlayerController2 : MonoBehaviour
   [SerializeField] float jumpForce = 10.0f;
   [SerializeField] float dashForce = 10.0f;
 
+  // Attack Variables
+  [SerializeField] float shotCooldown = 0.1f;
+  [SerializeField] Transform firePoint;
+  [SerializeField] GameObject[] fireballs;
+
   // Ability status
   [SerializeField] bool canWallJump = true;
   [SerializeField] float wallJumpTime = 0.2f;
@@ -35,6 +40,7 @@ public class PlayerController2 : MonoBehaviour
   bool airDashed;
   float airDashTimer;
   float gScale;
+  float shotCooldownTimer;
 
   // Start is called before the first frame update
   void Start()
@@ -55,6 +61,7 @@ public class PlayerController2 : MonoBehaviour
     doubleJumped = false;
     airDashed = false;
     airDashTimer = 0.0f;
+    shotCooldownTimer = 0.0f;
 
     // Remember base gravity scale
     gScale = body.gravityScale;
@@ -72,11 +79,19 @@ public class PlayerController2 : MonoBehaviour
     float moveX = Input.GetAxisRaw("Horizontal");
     bool run = Input.GetKey(KeyCode.LeftShift);
     bool dash = Input.GetKeyDown(KeyCode.LeftShift);
+
+    // Move horizontally
     Traverse(moveX, run, dash);
 
     // Jump
     if(Input.GetKeyDown(KeyCode.Space))
       Jump();
+
+    // Shoot
+    if(shotCooldownTimer > 0.0f)
+      shotCooldownTimer -= Time.deltaTime;
+    else if(Input.GetKeyDown("x") && canAttack())
+      Shoot();
 
     // Set animator State
     anim.SetBool("run", moveX != 0);
@@ -104,7 +119,7 @@ public class PlayerController2 : MonoBehaviour
       else
       {
         body.velocity = new Vector2(direction*dashForce,0);
-        airDashTimer -= 1*Time.deltaTime;
+        airDashTimer -= Time.deltaTime;
       }
     }
     else if(dash && !isGrounded())
@@ -143,9 +158,31 @@ public class PlayerController2 : MonoBehaviour
     }
   }
 
+  void Shoot()
+  {
+    //anim.SetTrigger("attack");
+    shotCooldownTimer = 0.0f;
+
+    int fbi = FindFireball();
+    fireballs[fbi].transform.position = firePoint.position;
+    fireballs[fbi].GetComponent<Fireball>().SetDirection(Mathf.Sign(transform.localScale.x));
+  }
+
+  int FindFireball()
+  {
+    for(int i = 0; i < fireballs.Length; i++)
+    {
+      if(!fireballs[i].activeInHierarchy)
+        return i;
+    }
+    return 0;
+  }
+
   bool isGrounded()
   {
     RaycastHit2D raycastHit = Physics2D.BoxCast(collider.bounds.center, collider.bounds.size, 0, Vector2.down, 0.1f, groundLayer);
+    doubleJumped = false;
+    airDashed = false;
     return  raycastHit.collider != null;
   }
 
@@ -155,12 +192,8 @@ public class PlayerController2 : MonoBehaviour
     return  raycastHit.collider != null;
   }
 
-  void OnCollisionEnter2D(Collision2D collision)
+  bool canAttack()
   {
-    if(collision.gameObject.tag == "Ground")
-    {
-      doubleJumped = false;
-      airDashed = false;
-    }
+    return airDashTimer <= 0.0f;
   }
 }
